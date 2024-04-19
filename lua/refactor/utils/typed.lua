@@ -15,4 +15,15 @@ function M.if_nil(...)
   assert(false, "All values are nil")
 end
 
+---@generic T
+---@param value T?
+---@param builder fun(): T
+---@return T
+function M.if_nil_with(value, builder)
+  if value == nil or value == vim.NIL then
+    return builder()
+  end
+  return value
+end
+
 return M
