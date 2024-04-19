@@ -5,15 +5,26 @@ local M = {}
 local Treesitter = require("refactor.utils.treesitter")
 ---@type refactor.utils.typed
 local Typed = require("refactor.utils.typed")
+---@type refactor.utils.vim
+local Vim = require("refactor.utils.vim")
+
+---@class refactor.core.finder.capture.VLine
+---@field start_row integer
+---@field end_row integer
+
+---@class refactor.core.finder.capture.Visual
+---@field start_pos refactor.utils.vim.Position0
+---@field end_pos refactor.utils.vim.Position0
 
 ---@class refactor.core.finder.CaptureOption
 ---@field query? string
 ---@field query_name? string
 ---@field query_lang? string
 ---@field match_captures? string|string[]
+---@field mode? refactor.core.finder.capture.VLine|refactor.core.finder.capture.Visual|refactor.utils.vim.Position0
 
 ---@param opts refactor.core.finder.CaptureOption
-function M.validate_capture_opts(opts)
+local function validate_capture_opts(opts)
   if opts.query == nil and opts.query_name == nil then
     error("Expect either query or query_name to be provided")
   end
@@ -25,10 +36,42 @@ function M.validate_capture_opts(opts)
   end
 end
 
+---@param mode refactor.core.finder.capture.VLine|refactor.core.finder.capture.Visual|refactor.utils.vim.Position0
+---@return function(node: TSNode): boolean
+local function generate_tsnode_filter(mode)
+  if mode.start_row ~= nil then
+    -- node should in range
+    return function(node)
+      local start_row, _, end_row, _ = node:range()
+      return mode.start_row <= start_row and mode.end_row >= end_row
+    end
+  end
+  if mode.start_pos ~= nil then
+    return function(node)
+      local start_row, start_col, end_row, end_col = node:range()
+      return mode.start_pos.row <= start_row
+        and mode.start_pos.col <= start_col
+        and mode.end_pos.row >= end_row
+        and mode.end_pos.col >= end_col
+    end
+  end
+  return function(node)
+    local start_row, start_col, end_row, end_col = node:range()
+    local pos = Vim.current_cursor0()
+    return start_row <= pos.row
+      and start_col <= pos.col
+      and end_row >= pos.row
+      and end_col >= pos.col
+  end
+end
+
 ---@param opts refactor.core.finder.CaptureOption
----@return TSQuery?, string[]
-function M.normalize_capture(opts)
+---@return vim.treesitter.Query?, string[], function(node:TSNode): boolean
+local function normalize_capture(opts)
   local lang = Typed.if_nil_with(opts.query_lang, Treesitter.buf_get_lang)
+  local mode = Typed.if_nil_with(opts.mode, function()
+    return Vim.current_cursor0()
+  end)
   ---@type vim.treesitter.Query
   local query
   if opts.query ~= nil then
@@ -44,17 +87,42 @@ function M.normalize_capture(opts)
   else
     matches = opts.match_captures --[[@as string[] ]]
   end
-  return query, matches
-  -- local tree = Treesitter.root_at_cursor()
-  -- local root = tree:root()
-  --
-  -- --  local root = self:root_at({ pos[1], pos[2] - 1 })
-  -- -- if root == nil then
-  -- -- 	return nil, nil
-  -- -- end
-  -- -- local root_from_line, _, root_to_line, _ = root:range()
-  -- -- root, self.source, root_from_line, root_to_line + 1
-  -- query:iter_matches()
+  return query, matches, generate_tsnode_filter(mode)
+end
+
+---@param opts refactor.core.finder.CaptureOption
+---@return {[1]: table<string, TSNode>, [2]: TSNode}[]?
+function M.find_capture(opts)
+  validate_capture_opts(opts)
+  local query, captures, filter = normalize_capture(opts)
+  if query == nil then
+    return nil
+  end
+  local tree = Treesitter.root_at_cursor()
+  if tree == nil then
+    return nil
+  end
+  local root = tree:root()
+  local root_from_line, _, root_to_line, _ = root:range()
+  local ret = {}
+  for match, node in
+    Treesitter.make_capture_iter(
+      captures,
+      query,
+      query:iter_matches(
+        root,
+        0,
+        root_from_line,
+        root_to_line + 1,
+        { all = true }
+      )
+    )
+  do
+    if filter(node) then
+      ret[#ret + 1] = { match, node }
+    end
+  end
+  return ret
 end
 
 return M

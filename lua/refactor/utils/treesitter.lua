@@ -107,4 +107,49 @@ function M.validate_nodes(opts)
   end
 end
 
+---@param captures string[]
+---@param query vim.treesitter.Query
+---@param match_iter fun(): string, table<number, TSNode>, number
+function M.make_capture_iter(captures, query, match_iter)
+  local captures_map = Vim.as_index_table(captures)
+  local current_match
+  local current_capture_id
+  local iter
+  local pattern
+
+  iter = function()
+    -- if there is no current match to continue,
+    if not current_match then
+      pattern, current_match, _ = match_iter()
+
+      -- occurs once there are no more matches.
+      if not pattern then
+        return nil
+      end
+    end
+    while true do
+      local node
+      current_capture_id, node = next(current_match, current_capture_id)
+      if not current_capture_id then
+        break
+      end
+
+      local capture_name = query.captures[current_capture_id]
+
+      if captures_map[capture_name] then
+        return current_match, node
+      end
+    end
+
+    -- iterated over all captures of the current match, reset it to
+    -- retrieve the next match in the recursion.
+    current_match = nil
+
+    -- tail-call-optimization! :fingers_crossed:
+    return iter()
+  end
+
+  return iter
+end
+
 return M
