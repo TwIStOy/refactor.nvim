@@ -1,4 +1,4 @@
----@class refactor.actions.nix
+---@class refactor.actions.cpp
 local M = {}
 
 return M

@@ -93,7 +93,7 @@ end
 ---@param opt refactor.utils.treesitter.ValidateNodeOption
 ---@return refactor.utils.treesitter.ValidateNodeFullOption
 local function normalize_validate_node_option(opt)
-  if vim.tbl_islist(opt) and #opt == 2 then
+  if vim.islist(opt) and #opt == 2 then
     return {
       node = opt[1],
       expect_types = opt[2],

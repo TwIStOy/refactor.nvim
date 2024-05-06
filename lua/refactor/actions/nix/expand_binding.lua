@@ -3,8 +3,6 @@ local M = {}
 
 ---@type refactor.core
 local Core = require("refactor.core")
----@type refactor.utils
-local Utils = require("refactor.utils")
 
 local bind_query = [[
 [
@@ -19,7 +17,7 @@ local selector = Core.selector.select_smallest_range
 
 local finder = Core.finder.find_capture
 
-function M.expand_binding()
+function M.do_refactor()
   local captures = finder {
     query = bind_query,
     query_lang = "nix",

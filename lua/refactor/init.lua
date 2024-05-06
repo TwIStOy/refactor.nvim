@@ -12,7 +12,7 @@ end
 function M.test()
   ---@type refactor.actions
   local Actions = require("refactor.actions")
-  Actions.Nix.expand_binding.expand_binding()
+  Actions.Nix.expand_binding.do_refactor()
 end
 
 return M
