@@ -17,6 +17,24 @@ function M.current_cursor0()
   }
 end
 
+---Returns whether the cursor is in the range.
+---@param start_row integer
+---@param start_col integer
+---@param end_row integer
+---@param end_col integer
+---@param pos? refactor.utils.vim.Position0
+---@return boolean
+function M.in_range(start_row, start_col, end_row, end_col, pos)
+  if pos == nil then
+    pos = M.current_cursor0()
+  end
+  local start_status = (start_row < pos.row)
+    or (start_row == pos.row and start_col <= pos.col)
+  local end_status = (end_row > pos.row)
+    or (end_row == pos.row and end_col >= pos.col)
+  return start_status and end_status
+end
+
 ---@param arr string[]
 ---@return table<string, boolean>
 function M.as_index_table(arr)

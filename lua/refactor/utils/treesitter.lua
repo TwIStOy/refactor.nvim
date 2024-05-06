@@ -7,6 +7,34 @@ local Typed = require("refactor.utils.typed")
 ---@type refactor.utils.vim
 local Vim = require("refactor.utils.vim")
 
+---@param node TSNode?
+function M.inspect_node(node)
+  if node == nil then
+    return "nil"
+  end
+  local start_row, start_col, end_row, end_col = node:range()
+  local node_type = node:type()
+  return ("(%s) %d:%d-%d:%d"):format(
+    node_type,
+    start_row,
+    start_col,
+    end_row,
+    end_col
+  )
+end
+
+---@param matches table<any, TSNode>
+function M.inspect_matches(matches)
+  local lines = {}
+  for k, match in pairs(matches) do
+    lines[#lines + 1] = ("Match %s:"):format(k)
+    for _, node in ipairs(match) do
+      lines[#lines + 1] = ("  %s"):format(M.inspect_node(node))
+    end
+  end
+  return table.concat(lines, "\n")
+end
+
 ---@param buf? number
 ---@return string
 function M.buf_get_lang(buf)
@@ -33,8 +61,8 @@ function M.node_under_cursor()
   if lang_tree:is_valid() then
     lang_tree:parse()
   end
-  local row, col = Vim.current_cursor0()
-  local range = { row, col, row, col }
+  local pos = Vim.current_cursor0()
+  local range = { pos.row, pos.col, pos.row, pos.col }
   return lang_tree:named_node_for_range(range, { ignore_injections = false })
 end
 
@@ -45,8 +73,8 @@ function M.root_at_cursor()
   if lang_tree:is_valid() then
     lang_tree:parse()
   end
-  local row, col = Vim.current_cursor0()
-  local range = { row, col, row, col }
+  local pos = Vim.current_cursor0()
+  local range = { pos.row, pos.col, pos.row, pos.col }
   return lang_tree:tree_for_range(range, { ignore_injections = false })
 end
 

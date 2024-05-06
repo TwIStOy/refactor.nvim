@@ -57,11 +57,7 @@ local function generate_tsnode_filter(mode)
   end
   return function(node)
     local start_row, start_col, end_row, end_col = node:range()
-    local pos = Vim.current_cursor0()
-    return start_row <= pos.row
-      and start_col <= pos.col
-      and end_row >= pos.row
-      and end_col >= pos.col
+    return Vim.in_range(start_row, start_col, end_row, end_col)
   end
 end
 
@@ -87,6 +83,7 @@ local function normalize_capture(opts)
   else
     matches = opts.match_captures --[[@as string[] ]]
   end
+  matches[#matches + 1] = "refactor"
   return query, matches, generate_tsnode_filter(mode)
 end
 
@@ -105,7 +102,7 @@ function M.find_capture(opts)
   local root = tree:root()
   local root_from_line, _, root_to_line, _ = root:range()
   local ret = {}
-  for match, node in
+  for match, nodes in
     Treesitter.make_capture_iter(
       captures,
       query,
@@ -118,8 +115,12 @@ function M.find_capture(opts)
       )
     )
   do
-    if filter(node) then
-      ret[#ret + 1] = { match, node }
+    for _, node in ipairs(nodes) do
+      if filter(node) then
+        print(Treesitter.inspect_matches(match))
+        print(Treesitter.inspect_node(node))
+        ret[#ret + 1] = { match, node }
+      end
     end
   end
   return ret

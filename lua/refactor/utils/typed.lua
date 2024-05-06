@@ -5,8 +5,9 @@ local M = {}
 ---@param ... T?
 ---@return T
 function M.if_nil(...)
-  local values = { ... }
-  for _, value in ipairs(values) do
+  local values = table.pack(...)
+  for i = 1, values.n do
+    local value = values[i]
     if value ~= nil and value ~= vim.NIL then
       return value
     end
