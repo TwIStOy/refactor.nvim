@@ -10,21 +10,9 @@ function M.setup(opts)
 end
 
 function M.test()
-  ---@type refactor.core
-  local Core = require("refactor.core")
-
-  local bind_query = [[
-[
-((binding
-  expression: (_) @expr
-)) 
-] @refactor
-]]
-
-  return Core.finder.find_capture {
-    query = bind_query,
-    query_lang = "nix",
-  }
+  ---@type refactor.actions
+  local Actions = require("refactor.actions")
+  Actions.Nix.expand_binding.expand_binding()
 end
 
 return M

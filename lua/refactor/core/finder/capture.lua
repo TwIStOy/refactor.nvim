@@ -117,8 +117,6 @@ function M.find_capture(opts)
   do
     for _, node in ipairs(nodes) do
       if filter(node) then
-        print(Treesitter.inspect_matches(match))
-        print(Treesitter.inspect_node(node))
         ret[#ret + 1] = { match, node }
       end
     end

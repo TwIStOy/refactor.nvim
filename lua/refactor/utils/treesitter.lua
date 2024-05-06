@@ -165,7 +165,11 @@ function M.make_capture_iter(captures, query, match_iter)
       local capture_name = query.captures[current_capture_id]
 
       if captures_map[capture_name] then
-        return current_match, node
+        local ret = {}
+        for id, capture in pairs(current_match) do
+          ret[query.captures[id]] = capture
+        end
+        return ret, node
       end
     end
 
