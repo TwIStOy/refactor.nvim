@@ -66,7 +66,9 @@ function M.create_context()
     Core.replace_node_text(refactor, lines)
   end
 
+  ---@type refactor.actions.ActionContext
   return {
+    name = "Expand Binding",
     available = available,
     do_refactor = do_refactor,
   }

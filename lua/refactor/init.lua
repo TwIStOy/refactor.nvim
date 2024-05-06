@@ -12,7 +12,10 @@ end
 function M.test()
   ---@type refactor.actions
   local Actions = require("refactor.actions")
-  Actions.Nix.expand_binding.do_refactor()
+  local ctx = Actions.Nix.expand_binding.create_context()
+  if ctx.available() then
+    ctx.do_refactor()
+  end
 end
 
 return M
