@@ -3,6 +3,8 @@ local M = {}
 
 ---@type refactor.core
 local Core = require("refactor.core")
+---@type refactor.utils
+local Utils = require("refactor.utils")
 
 local bind_query = [[
 [
@@ -17,54 +19,57 @@ local selector = Core.selector.select_smallest_range
 
 local finder = Core.finder.find_capture
 
-function M.do_refactor()
+---@return refactor.actions.ActionContext
+function M.create_context()
   local captures = finder {
     query = bind_query,
     query_lang = "nix",
   }
-
   local matches = selector(captures)
+  local buf = vim.api.nvim_get_current_buf()
 
-  if matches == nil then
-    return
+  local available = function()
+    return Utils.treesitter.not_empty_matches(
+      matches,
+      "expr",
+      "attrpath",
+      "refactor"
+    )
   end
 
-  local expr = matches["expr"]
-  if expr == nil or #expr == 0 then
-    return
-  end
+  local do_refactor = function()
+    assert(matches ~= nil)
+    local expr = matches["expr"][1]
+    local attrpath = matches["attrpath"][1]
+    local refactor = matches["refactor"][1]
 
-  local attrpath = matches["attrpath"]
-  if attrpath == nil or #attrpath == 0 then
-    return
-  end
-
-  local refactor = matches["refactor"]
-  if refactor == nil or #refactor == 0 then
-    return
-  end
-
-  local attr_nodes = attrpath[1]:field("attr")
-  local attrs = {}
-  for _, attr in ipairs(attr_nodes) do
-    attrs[#attrs + 1] = vim.treesitter.get_node_text(attr, 0)
-  end
-
-  local generate_bindings = function(first, attr, previous)
-    if first then
-      return ("%s = %s;"):format(attr, previous)
-    else
-      return ("%s = { %s };"):format(attr, previous)
+    local attr_nodes = attrpath:field("attr")
+    local attrs = {}
+    for _, attr in ipairs(attr_nodes) do
+      attrs[#attrs + 1] = vim.treesitter.get_node_text(attr, 0)
     end
+
+    local generate_bindings = function(first, attr, previous)
+      if first then
+        return ("%s = %s;"):format(attr, previous)
+      else
+        return ("%s = { %s };"):format(attr, previous)
+      end
+    end
+
+    local ret = vim.treesitter.get_node_text(expr, buf)
+    for j = #attrs, 1, -1 do
+      ret = generate_bindings(j == #attrs, attrs[j], ret)
+    end
+
+    local lines = vim.split(ret, "\n")
+    Core.replace_node_text(refactor, lines)
   end
 
-  local ret = vim.treesitter.get_node_text(expr[1], 0)
-  for j = #attrs, 1, -1 do
-    ret = generate_bindings(j == #attrs, attrs[j], ret)
-  end
-
-  local lines = vim.split(ret, "\n")
-  Core.replace_node_text(refactor[1], lines)
+  return {
+    available = available,
+    do_refactor = do_refactor,
+  }
 end
 
 return M

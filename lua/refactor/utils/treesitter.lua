@@ -184,4 +184,20 @@ function M.make_capture_iter(captures, query, match_iter)
   return iter
 end
 
+---@param matches table?
+---@param ... string
+---@return boolean
+function M.not_empty_matches(matches, ...)
+  if matches == nil then
+    return false
+  end
+  local names = { ... }
+  for _, field in ipairs(names) do
+    if matches[field] == nil or #matches[field] == 0 then
+      return false
+    end
+  end
+  return true
+end
+
 return M
