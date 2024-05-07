@@ -10,12 +10,13 @@ function M.setup(opts)
 end
 
 function M.test()
+  ---@type refactor.ui
+  local Ui = require("refactor.ui")
   ---@type refactor.actions
   local Actions = require("refactor.actions")
-  local ctx = Actions.Nix.expand_binding.create_context()
-  if ctx.available() then
-    ctx.do_refactor()
-  end
+
+  local ctxs = Actions.Nix.create_context()
+  Ui.open_ui(ctxs)
 end
 
 return M

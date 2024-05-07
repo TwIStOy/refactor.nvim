@@ -46,7 +46,7 @@ function M.create_context()
     local attr_nodes = attrpath:field("attr")
     local attrs = {}
     for _, attr in ipairs(attr_nodes) do
-      attrs[#attrs + 1] = vim.treesitter.get_node_text(attr, 0)
+      attrs[#attrs + 1] = vim.treesitter.get_node_text(attr, buf)
     end
 
     local generate_bindings = function(first, attr, previous)
@@ -63,7 +63,7 @@ function M.create_context()
     end
 
     local lines = vim.split(ret, "\n")
-    Core.replace_node_text(refactor, lines)
+    Core.replace_node_text(buf, refactor, lines)
   end
 
   ---@type refactor.actions.ActionContext
