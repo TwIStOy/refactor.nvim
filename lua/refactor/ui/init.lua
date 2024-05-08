@@ -28,12 +28,17 @@ function M.open_ui(ctxs)
 
     return n.tree {
       autofocus = true,
-      border_label = "Refacator This",
+      border_label = {
+        text = "Refacator This",
+        align = "center",
+      },
       data = nodes,
+      ---@diagnostic disable-next-line: unused-local
       on_select = function(ctx, component)
         ctx.ctx.do_refactor()
         renderer:close()
       end,
+      ---@diagnostic disable-next-line: unused-local
       prepare_node = function(ctx, line, component)
         local text = ("%s. %s"):format(ctx.idx, ctx.ctx.name)
         if ctx.ctx.available() then
