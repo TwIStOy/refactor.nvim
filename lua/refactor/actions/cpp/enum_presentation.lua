@@ -58,14 +58,69 @@ local support_functions = {
         enum_name
       )
       for _, enumerator in ipairs(enumerators) do
-        lines[#lines + 1] = ([[   if (str == "%s") { return %s::%s; } ]]):format(
+        lines[#lines + 1] = ([[  if (str == "%s") { return %s::%s; } ]]):format(
           enumerator,
           enum_name,
           enumerator
         )
       end
-      lines[#lines + 1] = "   assert(0);"
+      lines[#lines + 1] = "  assert(0);"
       lines[#lines + 1] = "}"
+      return lines
+    end,
+  },
+  {
+    id = "SerdeJSON",
+    title = "JSON Serde (nlohmann/json)",
+    ---@param enum_name string
+    ---@param enumerators string[]
+    callback = function(enum_name, enumerators)
+      --       namespace nlohmann {
+      --     template <>
+      --     struct adl_serializer<move_only_type> {
+      --         static move_only_type from_json(const json& j) {
+      --             return {j.template get<int>()};
+      --         }
+      --         static void to_json(json& j, move_only_type t) {
+      --             j = t.i;
+      --         }
+      --     };
+      -- }
+
+      local lines = {}
+      lines[#lines + 1] = "namespace nlohmann {"
+      lines[#lines + 1] = "template<>"
+      lines[#lines + 1] = ("struct adl_serializer<%s> {"):format(enum_name)
+      lines[#lines + 1] = ("  static %s from_json(const json& j) {"):format(
+        enum_name
+      )
+      lines[#lines + 1] = "    std::string str = j.template get<std::string>();"
+      for _, enumerator in ipairs(enumerators) do
+        lines[#lines + 1] = ([[    if (str == "%s") { return %s::%s; }    ]]):format(
+          enumerator,
+          enum_name,
+          enumerator
+        )
+      end
+      lines[#lines + 1] =
+        [[    throw std::invalid_argument("Invalid enum value");   ]]
+      lines[#lines + 1] = "  }"
+
+      lines[#lines + 1] = ("  static void to_json(json& j, %s t) {"):format(
+        enum_name
+      )
+      lines[#lines + 1] = "    switch (t) {"
+      for _, enumerator in ipairs(enumerators) do
+        lines[#lines + 1] = ([[      case %s::%s: j = "%s"; break;]]):format(
+          enum_name,
+          enumerator,
+          enumerator
+        )
+      end
+      lines[#lines + 1] = "    }"
+      lines[#lines + 1] = "  }"
+      lines[#lines + 1] = "};"
+
       return lines
     end,
   },

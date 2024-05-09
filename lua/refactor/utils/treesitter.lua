@@ -200,4 +200,19 @@ function M.not_empty_matches(matches, ...)
   return true
 end
 
+---@param nodes TSNode[]
+---@return TSNode[]
+function M.unique_nodes(nodes)
+  local seen = {}
+  local ret = {}
+  for _, node in ipairs(nodes) do
+    local key = M.inspect_node(node)
+    if not seen[key] then
+      seen[key] = true
+      ret[#ret + 1] = node
+    end
+  end
+  return ret
+end
+
 return M

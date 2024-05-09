@@ -88,7 +88,7 @@ local function normalize_capture(opts)
 end
 
 ---@param opts refactor.core.finder.CaptureOption
----@return {[1]: table<string, TSNode>, [2]: TSNode}[]?
+---@return {[1]: table<string, TSNode[]>, [2]: TSNode}[]?
 function M.find_capture(opts)
   validate_capture_opts(opts)
   local query, captures, filter = normalize_capture(opts)
@@ -121,6 +121,37 @@ function M.find_capture(opts)
       end
     end
   end
+
+  -- merge captures
+  local merged = {}
+  for _, pair in ipairs(ret) do
+    local match, node = pair[1], pair[2]
+    local key = Treesitter.inspect_node(node)
+    if merged[key] == nil then
+      merged[key] = {
+        node = node,
+        match = match,
+      }
+    else
+      for k, v in pairs(match) do
+        if merged[key].match[k] == nil then
+          merged[key].match[k] = v
+        else
+          vim.list_extend(merged[key].match[k], v)
+        end
+      end
+    end
+  end
+
+  ret = {}
+  for _, merged_pair in pairs(merged) do
+    local match = {}
+    for k, nodes in pairs(merged_pair.match) do
+      match[k] = Treesitter.unique_nodes(nodes)
+    end
+    ret[#ret + 1] = { match, merged_pair.node }
+  end
+
   return ret
 end
 
