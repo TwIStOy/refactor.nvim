@@ -75,18 +75,6 @@ local support_functions = {
     ---@param enum_name string
     ---@param enumerators string[]
     callback = function(enum_name, enumerators)
-      --       namespace nlohmann {
-      --     template <>
-      --     struct adl_serializer<move_only_type> {
-      --         static move_only_type from_json(const json& j) {
-      --             return {j.template get<int>()};
-      --         }
-      --         static void to_json(json& j, move_only_type t) {
-      --             j = t.i;
-      --         }
-      --     };
-      -- }
-
       local lines = {}
       lines[#lines + 1] = "namespace nlohmann {"
       lines[#lines + 1] = "template<>"
@@ -153,8 +141,18 @@ local function select_functions(enum_name, enumerators, callback)
   end
 
   local renderer = n.create_renderer {
-    width = 20,
+    width = 40,
     height = 10,
+  }
+
+  renderer:add_mappings {
+    {
+      mode = "n",
+      key = "q",
+      handler = function()
+        renderer:close()
+      end,
+    },
   }
 
   renderer:render(function()
