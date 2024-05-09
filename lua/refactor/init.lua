@@ -15,7 +15,7 @@ function M.test()
   ---@type refactor.actions
   local Actions = require("refactor.actions")
 
-  local ctxs = Actions.Nix.create_context()
+  local ctxs = Actions.Cpp.create_context()
   Ui.open_ui(ctxs)
 end
 
