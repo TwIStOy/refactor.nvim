@@ -25,8 +25,8 @@ local finder = Core.finder.find_capture
 
 ---@class refactor.actions.cpp.enum_presentation.SupportFunctions
 local support_functions = {
-  IntoString = {
-    index = 0,
+  {
+    id = "IntoString",
     title = "Into String",
     ---@param enum_name string
     ---@param enumerators string[]
@@ -46,8 +46,8 @@ local support_functions = {
       return lines
     end,
   },
-  FromString = {
-    index = 1,
+  {
+    id = "FromString",
     title = "From String",
     ---@param enum_name string
     ---@param enumerators string[]
@@ -71,6 +71,18 @@ local support_functions = {
   },
 }
 
+local function get_output_func(id)
+  if type(id) == "table" then
+    id = id.id
+  end
+  for _, value in ipairs(support_functions) do
+    if value.id == id then
+      return value.callback
+    end
+  end
+  return nil
+end
+
 local function select_functions(enum_name, enumerators, callback)
   local n = require("nui-components")
 
@@ -81,13 +93,9 @@ local function select_functions(enum_name, enumerators, callback)
   }
 
   local options = {}
-  for key, value in pairs(support_functions) do
-    options[#options + 1] =
-      n.option(value.title, { id = key, index = value.index })
+  for _, value in ipairs(support_functions) do
+    options[#options + 1] = n.option(value.title, { id = value.id })
   end
-  table.sort(options, function(a, b)
-    return a.index < b.index
-  end)
 
   local renderer = n.create_renderer {
     width = 20,
@@ -154,7 +162,7 @@ local function select_functions(enum_name, enumerators, callback)
             for _, selected in ipairs(signal.selected:get_value()) do
               lines = vim.list_extend(
                 lines,
-                support_functions[selected.id].callback(enum_name, enumerators)
+                get_output_func(selected)(enum_name, enumerators)
               )
             end
 
