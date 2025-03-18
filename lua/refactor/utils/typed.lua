@@ -5,7 +5,10 @@ local M = {}
 ---@param ... T?
 ---@return T
 function M.if_nil(...)
-  local values = table.pack(...)
+  local pack = table.pack or function(...)
+    return { n = select("#", ...), ... }
+  end
+  local values = pack(...)
   for i = 1, values.n do
     local value = values[i]
     if value ~= nil and value ~= vim.NIL then
